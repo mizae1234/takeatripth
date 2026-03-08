@@ -6,6 +6,8 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
 RUN npm ci
 
 # Build the app
@@ -16,8 +18,6 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Prisma generate + Next.js build
-RUN npx prisma generate
 RUN npm run build
 
 # Production image
@@ -33,6 +33,8 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
