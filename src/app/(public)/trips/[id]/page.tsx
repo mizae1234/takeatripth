@@ -6,11 +6,11 @@ interface Props {
     params: { id: string };
 }
 
-export default function TripDetailPage({ params }: Props) {
-    const trip = getTripById(params.id);
+export default async function TripDetailPage({ params }: Props) {
+    const trip = await getTripById(params.id);
     if (!trip) notFound();
 
-    const seats = getSeatsByTrip(params.id);
+    const seats = await getSeatsByTrip(params.id);
     const availableSeats = seats.filter(s => s.status === 'available').length;
 
     const formatDate = (date: string) =>
@@ -57,7 +57,7 @@ export default function TripDetailPage({ params }: Props) {
                 <div className="card p-6 mb-8">
                     <h2 className="text-2xl font-bold text-gray-800 mb-4">📸 แกลเลอรี่</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {trip.gallery_images.map((_, i) => (
+                        {(trip.gallery_images.length > 0 ? trip.gallery_images : ['1', '2', '3']).map((_, i) => (
                             <div key={i} className="aspect-video bg-gradient-to-br from-ocean-200 to-ocean-400 rounded-xl flex items-center justify-center text-5xl">
                                 {destinationEmoji[trip.destination] || '✈️'}
                             </div>
@@ -70,43 +70,46 @@ export default function TripDetailPage({ params }: Props) {
                     <h2 className="text-2xl font-bold text-gray-800 mb-4">📝 รายละเอียดทริป</h2>
                     <p className="text-gray-600 leading-relaxed text-lg">{trip.description}</p>
 
-                    {/* Highlights */}
-                    <div className="mt-6">
-                        <h3 className="font-semibold text-gray-800 mb-3">✨ ไฮไลท์ของทริป</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {trip.highlights.map((h, i) => (
-                                <span key={i} className="badge-blue !text-sm !px-4 !py-2">
-                                    {h}
-                                </span>
-                            ))}
+                    {trip.highlights.length > 0 && (
+                        <div className="mt-6">
+                            <h3 className="font-semibold text-gray-800 mb-3">✨ ไฮไลท์ของทริป</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {trip.highlights.map((h, i) => (
+                                    <span key={i} className="badge-blue !text-sm !px-4 !py-2">
+                                        {h}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Schedule */}
-                <div className="card p-6 mb-8">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6">🗓️ กำหนดการ</h2>
-                    <div className="space-y-6">
-                        {trip.schedule.map((day) => (
-                            <div key={day.day} className="relative pl-8 before:absolute before:left-3 before:top-0 before:bottom-0 before:w-0.5 before:bg-ocean-200">
-                                <div className="absolute left-0 top-0 w-7 h-7 bg-ocean-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                    {day.day}
+                {trip.schedule.length > 0 && (
+                    <div className="card p-6 mb-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6">🗓️ กำหนดการ</h2>
+                        <div className="space-y-6">
+                            {trip.schedule.map((day) => (
+                                <div key={day.day} className="relative pl-8 before:absolute before:left-3 before:top-0 before:bottom-0 before:w-0.5 before:bg-ocean-200">
+                                    <div className="absolute left-0 top-0 w-7 h-7 bg-ocean-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                        {day.day}
+                                    </div>
+                                    <div className="bg-ocean-50 rounded-xl p-4">
+                                        <h4 className="font-bold text-gray-800 mb-2">วันที่ {day.day}: {day.title}</h4>
+                                        <ul className="space-y-1">
+                                            {day.activities.map((activity, i) => (
+                                                <li key={i} className="text-gray-600 text-sm flex items-start gap-2">
+                                                    <span className="text-ocean-500 mt-0.5">•</span>
+                                                    {activity}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 </div>
-                                <div className="bg-ocean-50 rounded-xl p-4">
-                                    <h4 className="font-bold text-gray-800 mb-2">วันที่ {day.day}: {day.title}</h4>
-                                    <ul className="space-y-1">
-                                        {day.activities.map((activity, i) => (
-                                            <li key={i} className="text-gray-600 text-sm flex items-start gap-2">
-                                                <span className="text-ocean-500 mt-0.5">•</span>
-                                                {activity}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Booking CTA */}
                 <div className="card p-8 mb-8 bg-gradient-to-r from-accent-500 to-accent-600 text-white text-center">

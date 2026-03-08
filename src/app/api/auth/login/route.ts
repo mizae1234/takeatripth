@@ -1,39 +1,27 @@
 import { NextResponse } from 'next/server';
-import { loginByPhone, getCustomerByPhone } from '@/lib/data-service';
+import { loginByPhone } from '@/lib/data-service';
 
-export async function POST(request: Request) {
-    const { phone, otp } = await request.json();
+export async function POST(req: Request) {
+    const { phone } = await req.json();
 
     if (!phone) {
-        return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
+        return NextResponse.json({ error: 'Phone required' }, { status: 400 });
     }
 
-    // Step 1: Request OTP
-    if (!otp) {
-        const result = loginByPhone(phone);
-        if (result.success) {
-            return NextResponse.json({
-                success: true,
-                message: 'OTP sent (demo: 1234)',
-                exists: true
-            });
-        }
+    const result = await loginByPhone(phone);
+
+    if (result.success) {
         return NextResponse.json({
             success: true,
-            message: 'OTP sent (demo: 1234)',
-            exists: false
+            customer: result.customer,
+            otp: result.otp, // Demo only
         });
     }
 
-    // Step 2: Verify OTP (mock - always accept 1234)
-    if (otp === '1234') {
-        const customer = getCustomerByPhone(phone);
-        return NextResponse.json({
-            success: true,
-            verified: true,
-            customer: customer || null
-        });
-    }
-
-    return NextResponse.json({ success: false, error: 'Invalid OTP' }, { status: 400 });
+    // Phone not registered - send OTP for registration
+    return NextResponse.json({
+        success: false,
+        otp: '1234', // Demo OTP
+        message: 'Phone not registered',
+    });
 }

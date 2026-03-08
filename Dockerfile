@@ -15,6 +15,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Prisma generate + Next.js build
+RUN npx prisma generate
 RUN npm run build
 
 # Production image
@@ -28,6 +31,8 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 RUN mkdir .next
 RUN chown nextjs:nodejs .next

@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// พี่พาเที่ยว - Trip Booking System Schema
+// ==========================================
+
+model Trip {
+  id            String   @id @default(cuid())
+  trip_name     String
+  destination   String
+  description   String   @default("")
+  price         Float
+  date          DateTime
+  end_date      DateTime
+  total_seats   Int
+  gallery_images String[] @default([])
+  schedule      Json     @default("[]")
+  vans_assigned String[] @default([])
+  cover_image   String   @default("")
+  highlights    String[] @default([])
+  status        String   @default("open") // open, closed, full, completed
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  seats    Seat[]
+  bookings Booking[]
+
+  @@map("trips")
+}
+
+model Van {
+  id          String @id @default(cuid())
+  name        String
+  total_seats Int
+  seat_rows   Int    @default(5)
+  seat_cols   Int    @default(2)
+  created_at  DateTime @default(now())
+
+  seats Seat[]
+
+  @@map("vans")
+}
+
+model Seat {
+  id          String  @id @default(cuid())
+  van_id      String
+  trip_id     String
+  seat_number Int
+  status      String  @default("available") // available, reserved, booked
+  booking_id  String?
+
+  van     Van     @relation(fields: [van_id], references: [id])
+  trip    Trip    @relation(fields: [trip_id], references: [id])
+  booking Booking? @relation(fields: [booking_id], references: [id])
+
+  @@unique([trip_id, seat_number])
+  @@map("seats")
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  phone      String   @unique
+  name       String
+  line_id    String   @default("")
+  created_at DateTime @default(now())
+
+  bookings Booking[]
+
+  @@map("customers")
+}
+
+model Booking {
+  id               String   @id @default(cuid())
+  trip_id          String
+  customer_id      String
+  customer_name    String
+  customer_phone   String
+  customer_line_id String   @default("")
+  seats_json       Int[]    @default([])
+  status           String   @default("pending_payment") // pending_payment, waiting_verification, confirmed, cancelled
+  total_amount     Float
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  trip     Trip      @relation(fields: [trip_id], references: [id])
+  customer Customer  @relation(fields: [customer_id], references: [id])
+  payments Payment[]
+  seat_refs Seat[]
+
+  @@map("bookings")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  booking_id    String
+  amount        Float
+  transfer_time DateTime
+  slip_image    String   @default("")
+  status        String   @default("pending") // pending, verified, rejected
+  created_at    DateTime @default(now())
+
+  booking Booking @relation(fields: [booking_id], references: [id])
+
+  @@map("payments")
+}
+
+model Review {
+  id            String @id @default(cuid())
+  customer_name String
+  avatar        String @default("")
+  rating        Int
+  comment       String
+  trip_name     String
+  created_at    DateTime @default(now())
+
+  @@map("reviews")
+}

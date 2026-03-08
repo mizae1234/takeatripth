@@ -1,9 +1,12 @@
 import { getDashboardStats, getBookings, getTrips } from '@/lib/data-service';
 
-export default function AdminDashboard() {
-    const stats = getDashboardStats();
-    const recentBookings = getBookings().slice(-5).reverse();
-    const trips = getTrips();
+export const dynamic = 'force-dynamic';
+
+export default async function AdminDashboard() {
+    const stats = await getDashboardStats();
+    const allBookings = await getBookings();
+    const recentBookings = allBookings.slice(0, 5);
+    const trips = await getTrips();
 
     const statCards = [
         { icon: '📋', label: 'การจองทั้งหมด', value: stats.totalBookings, color: 'from-blue-500 to-blue-600' },
