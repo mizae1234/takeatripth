@@ -1,0 +1,9 @@
+services:
+  takeatripth:
+    build: .
+    container_name: takeatripth
+    restart: always
+    ports:
+      - "3005:3000"
+    environment:
+      - NODE_ENV=production
