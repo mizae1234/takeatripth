@@ -1,6 +1,11 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
 
-const prisma = new PrismaClient();
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL! });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
     console.log('🌱 Seeding database...');
@@ -53,14 +58,14 @@ async function main() {
         data: {
             trip_name: 'กระบี่ - เกาะพีพี - ทะเลแหวก',
             destination: 'กระบี่',
-            description: 'ดำน้ำชมปะการังเกาะพีพี ถ่ายรูปสวยๆทะเลแหวก เล่นกีฬาทางน้ำ นั่งเรือหางยาว ชิมอาหารทะเลสดๆจากทะเล รับแสง',
+            description: 'ดำน้ำชมปะการังเกาะพีพี ถ่ายรูปสวยๆทะเลแหวก เล่นกีฬาทางน้ำ นั่งเรือหางยาว ชิมอาหารทะเลสดๆจากทะเล',
             price: 5900,
             date: new Date('2026-04-25'),
             end_date: new Date('2026-04-28'),
             total_seats: 10,
             gallery_images: ['/images/kb1.jpg', '/images/kb2.jpg', '/images/kb3.jpg'],
             schedule: [
-                { day: 1, title: 'กรุงเทพ - กระบี่', activities: ['06:00 เดินทางสู่กระบี่', '12:00 ถึงกระบี่ รับประทานอาหาร', '14:00 เข้าที่พัก', '17:00 ชมอาอาทิตย์ตก'] },
+                { day: 1, title: 'กรุงเทพ - กระบี่', activities: ['06:00 เดินทางสู่กระบี่', '12:00 ถึงกระบี่ รับประทานอาหาร', '14:00 เข้าที่พัก', '17:00 ชมอาทิตย์ตก'] },
                 { day: 2, title: 'ทัวร์เกาะพีพี', activities: ['07:00 ออกเรือสู่เกาะพีพี', '09:00 ดำน้ำชมปะการัง', '12:00 รับประทานอาหารบนเกาะ', '14:00 ถ่ายรูปทะเลแหวก'] },
                 { day: 3, title: 'กิจกรรมทางทะเล', activities: ['08:00 พายเรือคายัค', '10:00 เล่นกีฬาทางน้ำ', '14:00 พักผ่อนริมหาด'] },
                 { day: 4, title: 'กลับกรุงเทพ', activities: ['08:00 ชมตลาดเช้า', '10:00 เดินทางกลับกรุงเทพ'] },
@@ -75,7 +80,7 @@ async function main() {
         data: {
             trip_name: 'เขาใหญ่ - ปากช่อง - แก่งกระจาน',
             destination: 'นครราชสีมา',
-            description: 'เที่ยวอุทยานแห่งชาติเขาใหญ่ ชมวิวทางหมอก เดินป่าศึกษาธรรมชาติ เขาใหญ่คือ PB Valley รื่นรมย์กับ Primo Place',
+            description: 'เที่ยวอุทยานแห่งชาติเขาใหญ่ ชมวิวทางหมอก เดินป่าศึกษาธรรมชาติ',
             price: 3200,
             date: new Date('2026-05-01'),
             end_date: new Date('2026-05-03'),
@@ -96,7 +101,7 @@ async function main() {
         data: {
             trip_name: 'น่าน - บ่อเกลือ - ปัว',
             destination: 'น่าน',
-            description: 'สัมผัสเสน่ห์เมืองน่าน วิวงามละเมียดน้ำรอบตัว สัมผัสวิถีชาวบ้านเขาหลวงพะเลิบ บ่อเกลือ - เที่ยวน้ำตกยูงทอง ผาชมดาวสงบเงียบ หลงรัก ให้หลงไปอีกนาน',
+            description: 'สัมผัสเสน่ห์เมืองน่าน วิวงามละเมียดน้ำรอบตัว สัมผัสวิถีชาวบ้าน',
             price: 4200,
             date: new Date('2026-05-15'),
             end_date: new Date('2026-05-18'),
@@ -113,11 +118,10 @@ async function main() {
             status: 'open',
         },
     });
-
     console.log('✅ Trips created');
 
     // ==========================================
-    // SEATS for each trip
+    // SEATS
     // ==========================================
     for (const trip of [trip1, trip2, trip3, trip4]) {
         const vanId = trip.vans_assigned[0] || vanA.id;
@@ -155,8 +159,6 @@ async function main() {
             total_amount: 4500,
         },
     });
-
-    // Update seat 8 to booked
     await prisma.seat.updateMany({
         where: { trip_id: trip1.id, seat_number: 8 },
         data: { status: 'booked', booking_id: booking1.id },
@@ -174,8 +176,6 @@ async function main() {
             total_amount: 11800,
         },
     });
-
-    // Update seats 1, 2 to reserved
     await prisma.seat.updateMany({
         where: { trip_id: trip2.id, seat_number: { in: [1, 2] } },
         data: { status: 'reserved', booking_id: booking2.id },
@@ -186,23 +186,10 @@ async function main() {
     // PAYMENTS
     // ==========================================
     await prisma.payment.create({
-        data: {
-            booking_id: booking1.id,
-            amount: 4500,
-            transfer_time: new Date('2026-03-05T14:30:00'),
-            slip_image: 'mock-slip-001.jpg',
-            status: 'verified',
-        },
+        data: { booking_id: booking1.id, amount: 4500, transfer_time: new Date('2026-03-05T14:30:00'), slip_image: 'mock-slip-001.jpg', status: 'verified' },
     });
-
     await prisma.payment.create({
-        data: {
-            booking_id: booking2.id,
-            amount: 11800,
-            transfer_time: new Date('2026-03-07T10:15:00'),
-            slip_image: 'mock-slip-002.jpg',
-            status: 'pending',
-        },
+        data: { booking_id: booking2.id, amount: 11800, transfer_time: new Date('2026-03-07T10:15:00'), slip_image: 'mock-slip-002.jpg', status: 'pending' },
     });
     console.log('✅ Payments created');
 
@@ -213,7 +200,7 @@ async function main() {
         data: [
             { customer_name: 'คุณเอม', avatar: '😊', rating: 5, comment: 'ไปมาหลายทริปแล้ว ทุกทริปจัดได้ดีมาก คุ้มค่าทุกบาท พี่ๆทีมงานใจดีมาก', trip_name: 'เชียงใหม่ - เมษายัน' },
             { customer_name: 'คุณมิ้น', avatar: '😄', rating: 5, comment: 'ชอบมากค่ะ วิวสวย โปรแกรมไม่เร่งรีบ ได้เที่ยวเต็มอิ่ม จะกลับมาจองอีกแน่นอน', trip_name: 'เขาใหญ่ - ปากช่อง' },
-            { customer_name: 'คุณบอส', avatar: '😎', rating: 4, comment: 'ไปกลางสมัยเป็นรุ่น ทุกอย่างจัดได้ดีมีความเป็นมืออาชีพ คุ้มค่าทุกบาท สำหรับคำเดินทริป มาก', trip_name: 'กระบี่ - เกาะพีพี' },
+            { customer_name: 'คุณบอส', avatar: '😎', rating: 4, comment: 'ทุกอย่างจัดได้ดีมีความเป็นมืออาชีพ คุ้มค่าทุกบาท', trip_name: 'กระบี่ - เกาะพีพี' },
             { customer_name: 'คุณเจ', avatar: '🤩', rating: 5, comment: 'ทริปน่านดีมากครับ ได้ไปเที่ยวที่ไม่เคยไป บรรยากาศดี อากาศเย็นสบาย', trip_name: 'น่าน - บ่อเกลือ' },
         ],
     });
@@ -223,10 +210,5 @@ async function main() {
 }
 
 main()
-    .catch((e) => {
-        console.error(e);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+    .catch((e) => { console.error(e); process.exit(1); })
+    .finally(async () => { await prisma.$disconnect(); });
