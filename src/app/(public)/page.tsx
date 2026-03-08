@@ -2,6 +2,8 @@ import { getTrips, getReviews } from '@/lib/data-service';
 import TripCard from '@/components/TripCard';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LandingPage() {
     const trips = await getTrips();
     const reviews = await getReviews();

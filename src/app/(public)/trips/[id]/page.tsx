@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { getTripById, getSeatsByTrip } from '@/lib/data-service';
 import { notFound } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
     params: { id: string };
 }
